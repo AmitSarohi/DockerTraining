@@ -29,3 +29,43 @@ jobs:
         run: |
           docker build -t demo-frontend ./frontend
           docker build -t demo-backend ./backend
+
+      - name: Create Private Registry
+        run: |
+          docker run -d \
+            --name private-registry \
+            -p 5001:5000 \
+            registry:2
+
+      - name: Wait for Registry
+        run: |
+          sleep 5
+          curl http://localhost:5001/v2/
+
+      - name: Tag Images
+        run: |
+          docker tag demo-frontend localhost:5001/demo-frontend:latest
+          docker tag demo-backend localhost:5001/demo-backend:latest
+
+      - name: Push Images to Registry
+        run: |
+          docker push localhost:5001/demo-frontend:latest
+          docker push localhost:5001/demo-backend:latest
+
+      - name: Verify Registry Contents
+        run: |
+          curl http://localhost:5001/v2/_catalog
+
+      - name: Remove Local Registry Tags
+        run: |
+          docker rmi localhost:5001/demo-frontend:latest || true
+          docker rmi localhost:5001/demo-backend:latest || true
+
+      - name: Pull Images From Registry
+        run: |
+          docker pull localhost:5001/demo-frontend:latest
+          docker pull localhost:5001/demo-backend:latest
+
+      - name: Verify Pulled Images
+        run: |
+          docker images

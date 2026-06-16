@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   postgres:
     image: postgres:15
@@ -13,7 +14,7 @@ services:
       - "5432:5432"
 
   backend:
-    build: ./backend
+    image: localhost:5001/employee-backend:1.0
     environment:
       PORT: 5000
       DB_HOST: postgres
@@ -27,10 +28,10 @@ services:
       - "5000:5000"
 
   frontend:
-    build: ./frontend
+    image: localhost:5001/employee-frontend:1.0
     environment:
-      - CHOKIDAR_USEPOLLING=true
-      - REACT_APP_API_URL=http://localhost:5000
+      CHOKIDAR_USEPOLLING: "true"
+      REACT_APP_API_URL: "http://backend:5000"
     depends_on:
       - backend
     ports:
