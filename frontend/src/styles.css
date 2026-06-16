@@ -1,0 +1,11 @@
+/* Simple responsive styles */
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+.container { max-width: 900px; margin: 0 auto; padding: 16px; }
+.nav { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.nav a { margin-left:12px; text-decoration:none; color:#0366d6; }
+.table { width:100%; border-collapse: collapse; margin-top:12px; }
+.table th, .table td { text-align:left; padding:8px; border-bottom:1px solid #eee; }
+.btn-danger { background:#e55353; color:#fff; border:none; padding:6px 10px; cursor:pointer; }
+.form { display:flex; flex-direction:column; gap:8px; max-width:400px; }
+.form input { padding:8px; font-size:14px; }
+@media (max-width:600px) { .container { padding:8px; } .table td { font-size:13px; } }
