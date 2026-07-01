@@ -35,7 +35,7 @@ export default function EmployeeList() {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div>
+    <div className="card">
       <h2>Employees</h2>
       {employees.length === 0 ? (
         <p>No employees found.</p>

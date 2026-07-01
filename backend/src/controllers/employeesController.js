@@ -22,6 +22,7 @@ exports.createEmployee = async (req, res) => {
       'INSERT INTO employees (name,email,department) VALUES ($1,$2,$3) RETURNING *',
       [name, email, department]
     );
+    console.log(`Employee created: ${result.rows[0].id} ${result.rows[0].name} <${result.rows[0].email}> (${result.rows[0].department})`);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -35,6 +36,7 @@ exports.deleteEmployee = async (req, res) => {
   if (!id) return res.status(400).json({ error: 'Invalid id' });
   try {
     await db.query('DELETE FROM employees WHERE id = $1', [id]);
+    console.log(`Employee deleted: ${id}`);
     res.status(204).send();
   } catch (err) {
     console.error(err);

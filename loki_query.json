@@ -1,0 +1,95 @@
+﻿{
+    "status":  "success",
+    "data":  {
+                 "resultType":  "streams",
+                 "result":  [
+                                {
+                                    "stream":  {
+                                                   "filename":  "/var/lib/docker/containers/67c4185db769709a1b004cd1b97ec3f035ff1d2260d795619a4e83905edb8485/67c4185db769709a1b004cd1b97ec3f035ff1d2260d795619a4e83905edb8485-json.log",
+                                                   "job":  "docker"
+                                               },
+                                    "values":  [
+                                                   "1782657328336578703 {\"log\":\"time=\\\"2026-06-28T14:35:28Z\\\" level=debug msg=\\\"version negotiation\\\"\\n\",\"stream\":\"stderr\",\"time\":\"2026-06-28T14:35:28.189331018Z\"}",
+                                                   "1782657328336448840 {\"log\":\"time=\\\"2026-06-28T14:35:28Z\\\" level=debug msg=request method=GET url=/v2/\\n\",\"stream\":\"stderr\",\"time\":\"2026-06-28T14:35:28.189317079Z\"}",
+                                                   "1782657328336411847 {\"log\":\"time=\\\"2026-06-28T14:35:28Z\\\" level=debug msg=\\\"  -----  \\\"\\n\",\"stream\":\"stderr\",\"time\":\"2026-06-28T14:35:28.189183058Z\"}",
+                                                   "1782657323321484364 {\"log\":\"time=\\\"2026-06-28T14:35:23Z\\\" level=debug msg=\\\"version negotiation\\\"\\n\",\"stream\":\"stderr\",\"time\":\"2026-06-28T14:35:23.098959264Z\"}",
+                                                   "1782657323321468761 {\"log\":\"time=\\\"2026-06-28T14:35:23Z\\\" level=debug msg=request method=GET url=/v2/\\n\",\"stream\":\"stderr\",\"time\":\"2026-06-28T14:35:23.09894979Z\"}"
+                                               ]
+                                }
+                            ],
+                 "stats":  {
+                               "summary":  {
+                                               "bytesProcessedPerSecond":  5233093,
+                                               "linesProcessedPerSecond":  16102,
+                                               "totalBytesProcessed":  357163,
+                                               "totalLinesProcessed":  1099,
+                                               "execTime":  0.068251,
+                                               "queueTime":  0.001122,
+                                               "subqueries":  0,
+                                               "totalEntriesReturned":  5,
+                                               "splits":  1,
+                                               "shards":  0,
+                                               "totalPostFilterLines":  1099,
+                                               "totalStructuredMetadataBytesProcessed":  0
+                                           },
+                               "querier":  {
+                                               "store":  {
+                                                             "totalChunksRef":  0,
+                                                             "totalChunksDownloaded":  0,
+                                                             "chunksDownloadTime":  0,
+                                                             "chunk":  "@{headChunkBytes=0; headChunkLines=0; decompressedBytes=0; decompressedLines=0; compressedBytes=0; totalDuplicates=0; postFilterLines=0; headChunkStructuredMetadataBytes=0; decompressedStructuredMetadataBytes=0}"
+                                                         }
+                                           },
+                               "ingester":  {
+                                                "totalReached":  1,
+                                                "totalChunksMatched":  5,
+                                                "totalBatches":  1,
+                                                "totalLinesSent":  5,
+                                                "store":  {
+                                                              "totalChunksRef":  0,
+                                                              "totalChunksDownloaded":  0,
+                                                              "chunksDownloadTime":  0,
+                                                              "chunk":  "@{headChunkBytes=357163; headChunkLines=1099; decompressedBytes=0; decompressedLines=0; compressedBytes=22950; totalDuplicates=0; postFilterLines=1099; headChunkStructuredMetadataBytes=0; decompressedStructuredMetadataBytes=0}"
+                                                          }
+                                            },
+                               "cache":  {
+                                             "chunk":  {
+                                                           "entriesFound":  0,
+                                                           "entriesRequested":  0,
+                                                           "entriesStored":  0,
+                                                           "bytesReceived":  0,
+                                                           "bytesSent":  0,
+                                                           "requests":  0,
+                                                           "downloadTime":  0
+                                                       },
+                                             "index":  {
+                                                           "entriesFound":  0,
+                                                           "entriesRequested":  0,
+                                                           "entriesStored":  0,
+                                                           "bytesReceived":  0,
+                                                           "bytesSent":  0,
+                                                           "requests":  0,
+                                                           "downloadTime":  0
+                                                       },
+                                             "result":  {
+                                                            "entriesFound":  0,
+                                                            "entriesRequested":  0,
+                                                            "entriesStored":  0,
+                                                            "bytesReceived":  0,
+                                                            "bytesSent":  0,
+                                                            "requests":  0,
+                                                            "downloadTime":  0
+                                                        },
+                                             "statsResult":  {
+                                                                 "entriesFound":  0,
+                                                                 "entriesRequested":  0,
+                                                                 "entriesStored":  0,
+                                                                 "bytesReceived":  0,
+                                                                 "bytesSent":  0,
+                                                                 "requests":  0,
+                                                                 "downloadTime":  0
+                                                             }
+                                         }
+                           }
+             }
+}

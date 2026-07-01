@@ -13,6 +13,7 @@ app.use(express.json());
 app.use('/employees', employeesRouter);
 
 app.get('/', (req, res) => res.send('Employee API is running'));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);

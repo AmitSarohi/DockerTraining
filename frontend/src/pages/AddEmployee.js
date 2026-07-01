@@ -23,7 +23,7 @@ export default function AddEmployee() {
   };
 
   return (
-    <div>
+    <div className="card">
       <h2>Add Employee</h2>
       <form onSubmit={onSubmit} className="form">
         <label>
@@ -38,7 +38,7 @@ export default function AddEmployee() {
           Department
           <input name="department" value={form.department} onChange={onChange} required />
         </label>
-        <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add'}</button>
+        <button type="submit" className="button" disabled={saving}>{saving ? 'Saving...' : 'Add'}</button>
       </form>
     </div>
   );

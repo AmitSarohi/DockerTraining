@@ -53,7 +53,13 @@ PostgreSQL Database
 ```text
 project-root/
 ├── frontend/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── nginx.conf
+│   └── src/
 ├── backend/
+│   ├── Dockerfile
+│   └── .dockerignore
 ├── database/
 │   └── init.sql
 ├── .github/
@@ -100,6 +106,14 @@ http://localhost:3000
 ---
 
 # Docker Image Management
+
+## Optimized Docker Builds
+
+The Dockerfiles now use multi-stage builds for smaller production images and faster rebuilds:
+
+* Backend: installs dependencies in a build stage and runs the app from a lightweight runtime stage.
+* Frontend: builds the React app in a Node stage and serves the static output with Nginx.
+* Build contexts are reduced using Docker ignore files to avoid sending unnecessary files into the build pipeline.
 
 ## Build Docker Images
 
@@ -206,6 +220,76 @@ docker logs -f employee-backend
 
 ---
 
+# Security Best Practices
+
+## Least-privilege container user
+
+The backend Dockerfile now creates and runs as a non-root `appuser` user in the final image. This reduces risk if a container is compromised.
+
+## Secret management
+
+Secrets are no longer recommended to be stored directly in `docker-compose.yml` or source control. A `.env.example` is provided to document expected variables; copy it to `.env` for local development and never commit `.env`. Instead:
+
+* Use environment variables from the host or CI environment.
+* Use file-backed secrets for sensitive credentials.
+* The backend supports `DB_PASSWORD_FILE` to load the database password from a mounted file.
+
+Example `docker-compose.yml` service configuration:
+
+```yaml
+backend:
+  environment:
+    DB_HOST: postgres
+    DB_PORT: 5432
+    DB_USER: postgres
+    DB_NAME: employees_db
+    DB_PASSWORD_FILE: /run/secrets/db_password
+  secrets:
+    - db_password
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+```
+
+Example `.env` style override:
+
+```bash
+DB_PASSWORD_FILE=/run/secrets/db_password docker compose up -d
+```
+
+## Image vulnerability scanning
+
+Scan built images for known vulnerabilities using Docker Scan or another OCI-compatible scanner.
+
+Docker Scan example:
+
+```bash
+docker scan localhost:5001/employee-backend:1.0
+```
+
+If you do not have Docker Scan configured, consider `trivy` or `grype` for local scanning:
+
+```bash
+trivy image localhost:5001/employee-backend:1.0
+```
+
+## Docker Bench for Security
+
+Docker Bench is a host-level audit that requires access to the Docker daemon socket and host namespaces. On a Linux host with a reachable Docker socket, run it with a privileged audit container:
+
+```powershell
+docker run --rm --net host --pid host --userns host --cap-add audit_control -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc:ro -v /var/lib:/var/lib:ro -v /usr/lib:/usr/lib:ro docker/docker-bench-security
+```
+
+If you are on Windows, Docker Desktop, or a restricted environment, the audit may fail with `Error connecting to docker daemon`. In that case, run the scan from a Linux host, a VM, or CI/CD environment where the Docker socket is accessible.
+
+## Don't store secrets in Git
+
+Never commit `.env` files, secret values, or private keys to source control. Add them to `.gitignore` where appropriate and use environment-specific secret stores in CI/CD.
+
+---
+
 # Private Docker Registry
 
 A private Docker registry is created using the official Docker Registry image.
@@ -288,14 +372,214 @@ docker pull localhost:5001/employee-backend:1.0
 
 ---
 
-# Running with Docker Compose
+# Optimization Highlights
 
-The application uses Docker Compose to orchestrate multiple containers.
+The Docker setup was improved with the following changes:
 
-## Pull Images
+* Added multi-stage builds for both the backend and frontend to separate build dependencies from the final runtime image.
+* Switched the backend to a lightweight Alpine-based runtime for a smaller production image.
+* Moved the frontend to a Node build stage plus an Nginx serving stage for faster startup and reduced image size.
+* Added Docker ignore files to shrink the build context and speed up rebuilds.
+* Updated Docker Compose to build the services from the optimized Dockerfiles.
+
+---
+
+# Custom Docker Network
+
+The application services are connected through a custom bridge network named `employee-network`.
+
+Once the Compose stack is started, this network should appear in the Docker network list and allow the containers to communicate with each other using service names instead of hardcoded IP addresses:
+
+* `frontend` reaches the backend at `http://backend:5000`
+* `backend` connects to PostgreSQL using the hostname `postgres`
+
+The network is defined in [docker-compose.yml](docker-compose.yml) and is shared by the following services:
+
+* `postgres`
+* `backend`
+* `frontend`
+
+---
+
+# Docker Volumes for Persistent Data
+
+The PostgreSQL service uses a named Docker volume called `db-data` to persist database files across container restarts and rebuilds.
+
+This volume is mounted at `/var/lib/postgresql/data` inside the PostgreSQL container:
+
+```yaml
+volumes:
+  - db-data:/var/lib/postgresql/data
+```
+
+Using a named volume means the database data remains available even if the container is removed, unless the volume is explicitly deleted.
+
+This Compose stack also uses a bind mount for database initialization SQL:
+
+```yaml
+volumes:
+  - db-data:/var/lib/postgresql/data
+  - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+```
+
+That bind mount makes local host content available to the PostgreSQL container at runtime, while the named volume persists the actual database files.
+
+## Named Volumes vs Bind Mounts
+
+* Named volume (`db-data`) is managed by Docker and is ideal for persistent container data like database files.
+* Bind mount (`./database/init.sql`) maps a host file or folder into the container and is useful for local configuration, initialization scripts, or development source code.
+
+### Multi-container usage
+
+In this multi-container setup:
+
+* `postgres` persists data in the named volume `db-data`.
+* `backend` and `frontend` can restart or redeploy without losing database state.
+* the `postgres` service still uses a local init script from the host via bind mount.
+
+You can extend this pattern for development, for example:
+
+```yaml
+backend:
+  volumes:
+    - ./backend:/app
+```
+
+This bind mount lets your backend code changes flow into the running container for faster iteration.
+
+## Volume Commands
+
+List volumes:
 
 ```bash
-docker compose pull
+docker volume ls
+```
+
+Inspect the PostgreSQL volume:
+
+```bash
+docker volume inspect db-data
+```
+
+Remove the volume (data will be lost):
+
+```bash
+docker volume rm db-data
+```
+
+Remove unused volumes:
+
+```bash
+docker volume prune
+```
+
+Remove Compose-created volumes when tearing down the stack:
+
+```bash
+docker compose down -v
+```
+
+## Backup and Restore Volume Data
+
+Backup the `db-data` volume to a tar archive on the host:
+
+```bash
+docker run --rm \
+  -v db-data:/volume \
+  -v %cd%/backup:/backup \
+  busybox \
+  tar czf /backup/db-data-backup.tar.gz -C /volume .
+```
+
+Restore the backup into the `db-data` volume:
+
+```bash
+docker run --rm \
+  -v db-data:/volume \
+  -v %cd%/backup:/backup \
+  busybox \
+  sh -c "cd /volume && tar xzf /backup/db-data-backup.tar.gz"
+```
+
+If you use PowerShell, replace `%cd%` with `${PWD}` and adjust quoting as needed.
+
+---
+
+# Log Aggregation and Visualization
+
+A lightweight monitoring stack is now included to collect container logs and make them available in Grafana:
+
+* Loki stores logs.
+* Promtail collects logs from Docker containers and forwards them to Loki.
+* Grafana provides a web UI to explore and visualize the logs.
+
+## Start the monitoring stack
+
+```bash
+docker compose up -d loki promtail grafana
+```
+
+## Access the dashboards
+
+* Grafana: http://localhost:3001
+* Login: `admin` / `admin`
+
+## Explore logs
+
+In Grafana, open the Explore view and select the Loki data source. You can filter by service, container, or stream to inspect application behavior and performance trends.
+
+---
+
+# Docker Commands to Inspect and Manage the Network
+
+List all Docker networks:
+
+```bash
+docker network ls
+```
+
+You should now see `dockertraining_employee-network` or `employee-network` listed after starting the stack with `docker compose up -d`, depending on the Compose project name.
+
+Inspect the custom network:
+
+```bash
+docker network inspect dockertraining_employee-network
+```
+
+View containers connected to the network:
+
+```bash
+docker network inspect dockertraining_employee-network --format='{{range .Containers}}{{.Name}} {{end}}'
+```
+
+Disconnect a container from the network:
+
+```bash
+docker network disconnect dockertraining_employee-network <container-name>
+```
+
+Connect a container to the network:
+
+```bash
+docker network connect dockertraining_employee-network <container-name>
+```
+
+Remove the network when it is no longer needed:
+
+```bash
+docker network rm dockertraining_employee-network
+```
+
+---
+
+# Running with Docker Compose
+
+The application uses Docker Compose to orchestrate multiple containers and build the images directly from the updated Dockerfiles.
+
+## Build Images
+
+```bash
+docker compose build
 ```
 
 ## Start Application
@@ -303,6 +587,9 @@ docker compose pull
 ```bash
 docker compose up -d
 ```
+
+The frontend is served through Nginx on port 3000, while the backend runs on port 5000.
+
 
 ## Verify Services
 

@@ -12,30 +12,93 @@ services:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
+    networks:
+      - employee-network
 
   backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: localhost:5001/employee-backend:1.0
     environment:
-      PORT: 5000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: employees_db
+      PORT: ${PORT:-5000}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-employees_db}
     depends_on:
       - postgres
     ports:
       - "5000:5000"
+    networks:
+      - employee-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     image: localhost:5001/employee-frontend:1.0
-    environment:
-      CHOKIDAR_USEPOLLING: "true"
-      REACT_APP_API_URL: "http://backend:5000"
     depends_on:
       - backend
     ports:
       - "3000:3000"
+    networks:
+      - employee-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  loki:
+    image: grafana/loki:2.9.2
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - employee-network
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    command: -config.file=/etc/promtail/config.yml
+    environment:
+      DOCKER_API_VERSION: "1.53"
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
+    networks:
+      - employee-network
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./monitoring/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - loki
+    networks:
+      - employee-network
+
+networks:
+  employee-network:
+    driver: bridge
 
 volumes:
   db-data:
+  loki-data:
+  grafana-data:
